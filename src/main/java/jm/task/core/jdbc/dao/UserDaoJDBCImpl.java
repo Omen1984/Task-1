@@ -3,10 +3,7 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +34,6 @@ public class UserDaoJDBCImpl implements UserDao {
                     "PRIMARY KEY (id));";
 
             try (Statement st = connection.createStatement()) {
-
                 st.executeUpdate(sql);
                 System.out.println("TABLE CREATE " + TABLE_NAME + " COMPLETE");
             } catch (SQLException e) {
@@ -52,7 +48,6 @@ public class UserDaoJDBCImpl implements UserDao {
             String sql = "DROP TABLE " + TABLE_NAME + ";";
 
             try (Statement st = connection.createStatement()) {
-
                 st.executeUpdate(sql);
                 System.out.println("DROP TABLE " + TABLE_NAME + " COMPLETE");
             } catch (SQLException e) {
@@ -66,15 +61,19 @@ public class UserDaoJDBCImpl implements UserDao {
             String sql = "INSERT INTO " + TABLE_NAME +
                     "(name, lastname, age) " +
                     "VALUES" +
-                    "('" + name + "', '" + lastName + "', " + age + ") " +
+                    "(?, ?, ?)" +
                     "returning name;";
 
-            try (Statement st = connection.createStatement();
-                 ResultSet rs = st.executeQuery(sql)) {
+            try (PreparedStatement pst = connection.prepareStatement(sql)) {
+                pst.setString(1, name);
+                pst.setString(2, lastName);
+                pst.setInt(3, age);
+                ResultSet rs = pst.executeQuery();
 
                 while (rs.next()) {
                     System.out.println("User с именем – " + rs.getString(1) + " добавлен в базу данных");
                 }
+                rs.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -86,12 +85,13 @@ public class UserDaoJDBCImpl implements UserDao {
 
         if (users != null) {
             String sql = "DELETE FROM " + TABLE_NAME +
-                    " WHERE id = " + id + ";";
+                    " WHERE id = ?;";
 
             users.stream().forEach((u) -> {
                 if (u.getId() == id) {
-                    try (Statement st = connection.createStatement()) {
-                        st.executeUpdate(sql);
+                    try (PreparedStatement pst = connection.prepareStatement(sql)) {
+                        pst.setLong(1, id);
+                        pst.executeUpdate();
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
@@ -112,7 +112,6 @@ public class UserDaoJDBCImpl implements UserDao {
 
             try (Statement st = connection.createStatement();
                  ResultSet rs = st.executeQuery(sql)) {
-
                 while (rs.next()) {
                     User user = new User();
 
@@ -141,13 +140,12 @@ public class UserDaoJDBCImpl implements UserDao {
             String sql = "TRUNCATE TABLE " + TABLE_NAME;
 
             try (Statement st = connection.createStatement()) {
-
                 st.executeUpdate(sql);
                 System.out.println("TRUNCATE TABLE " + TABLE_NAME + " COMPLETE");
-
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+
         }
     }
 
@@ -164,6 +162,7 @@ public class UserDaoJDBCImpl implements UserDao {
                     isPresent = true;
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
