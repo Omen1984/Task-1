@@ -112,6 +112,7 @@ public class UserDaoJDBCImpl implements UserDao {
 
             try (Statement st = connection.createStatement();
                  ResultSet rs = st.executeQuery(sql)) {
+
                 while (rs.next()) {
                     User user = new User();
 
@@ -127,11 +128,14 @@ public class UserDaoJDBCImpl implements UserDao {
 
                     users.add(user);
                 }
+
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            users.stream().forEach(System.out::println);
             return users;
         }
+        System.out.println("Таблици не существует");
         return null;
     }
 
@@ -140,8 +144,10 @@ public class UserDaoJDBCImpl implements UserDao {
             String sql = "TRUNCATE TABLE " + TABLE_NAME;
 
             try (Statement st = connection.createStatement()) {
+
                 st.executeUpdate(sql);
                 System.out.println("TRUNCATE TABLE " + TABLE_NAME + " COMPLETE");
+
             } catch (SQLException e) {
                 e.printStackTrace();
             }

@@ -7,21 +7,33 @@ import java.util.Properties;
 
 public class Util {
     // реализуйте настройку соеденения с БД
+    private static final String DEFAULT_HOST = "localhost";
+    private static final String DEFAULT_PORT = "5432";
+    private static final String DEFAULT_DBNAME = "Learningdata";
+    private static final String DEFAULT_USERNAME = "root";
+    private static final String DEFAULT_PASSWORD = "root";
+    private static final String DEFAULT_DRIVER = "org.postgresql.Driver";
     public Connection getPostgresConnection() throws SQLException,
             ClassNotFoundException {
-        String hostName = "localhost";
-        String port = "5432";
-        String dbName = "Learningdata";
-        String userName = "root";
-        String password = "root";
 
-        return getPostgresConnection(hostName, port, dbName, userName, password);
+        return getPostgresConnection(
+                DEFAULT_DRIVER,
+                DEFAULT_HOST,
+                DEFAULT_PORT,
+                DEFAULT_DBNAME,
+                DEFAULT_USERNAME,
+                DEFAULT_PASSWORD);
     }
 
-    public Connection getPostgresConnection(String hostName, String port, String dbName, String userName, String password)
-            throws ClassNotFoundException, SQLException {
+    public Connection getPostgresConnection(
+            String driver,
+            String hostName,
+            String port,
+            String dbName,
+            String userName,
+            String password) throws ClassNotFoundException, SQLException {
 
-        Class.forName("org.postgresql.Driver");
+        Class.forName(driver);
         Properties props = new Properties();
         props.setProperty("user", userName);
         props.setProperty("password", password);
