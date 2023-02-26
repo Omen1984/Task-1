@@ -1,23 +1,21 @@
 package jm.task.core.jdbc.util;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import org.postgresql.ds.PGConnectionPoolDataSource;
+
 import java.sql.SQLException;
-import java.util.Properties;
 
 public class Util {
-    // реализуйте настройку соеденения с БД
+
     private static final String DEFAULT_HOST = "localhost";
-    private static final String DEFAULT_PORT = "5432";
+    private static final int DEFAULT_PORT = 5432;
     private static final String DEFAULT_DBNAME = "Learningdata";
     private static final String DEFAULT_USERNAME = "root";
     private static final String DEFAULT_PASSWORD = "root";
-    private static final String DEFAULT_DRIVER = "org.postgresql.Driver";
-    public Connection getPostgresConnection() throws SQLException,
+
+    public PGConnectionPoolDataSource getPGConnectionPoolDataSource() throws SQLException,
             ClassNotFoundException {
 
-        return getPostgresConnection(
-                DEFAULT_DRIVER,
+        return getPGConnectionPoolDataSource(
                 DEFAULT_HOST,
                 DEFAULT_PORT,
                 DEFAULT_DBNAME,
@@ -25,23 +23,20 @@ public class Util {
                 DEFAULT_PASSWORD);
     }
 
-    public Connection getPostgresConnection(
-            String driver,
+    public PGConnectionPoolDataSource getPGConnectionPoolDataSource(
             String hostName,
-            String port,
+            int port,
             String dbName,
             String userName,
-            String password) throws ClassNotFoundException, SQLException {
+            String password) {
 
-        Class.forName(driver);
-        Properties props = new Properties();
-        props.setProperty("user", userName);
-        props.setProperty("password", password);
+        PGConnectionPoolDataSource dataSource = new PGConnectionPoolDataSource();
+        dataSource.setServerNames(new String[]{hostName});
+        dataSource.setDatabaseName(dbName);
+        dataSource.setPortNumbers(new int[]{port});
+        dataSource.setUser(userName);
+        dataSource.setPassword(password);
 
-        String url = String.format("jdbc:postgresql://%s:%s/%s", hostName, port, dbName);
-
-        Connection db = DriverManager.getConnection(url, props);
-
-        return db;
+        return dataSource;
     }
 }

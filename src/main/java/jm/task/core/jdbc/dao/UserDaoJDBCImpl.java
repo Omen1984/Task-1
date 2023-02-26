@@ -2,6 +2,7 @@ package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
+import org.postgresql.ds.PGConnectionPoolDataSource;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,13 +11,13 @@ import java.util.List;
 public class UserDaoJDBCImpl implements UserDao {
 
     private final Util util;
-    private Connection connection = null;
+    private PGConnectionPoolDataSource dataSource;
     private static final String TABLE_NAME = "user_data";
 
     public UserDaoJDBCImpl() {
         this.util = new Util();
         try {
-            this.connection = util.getPostgresConnection();
+            this.dataSource = util.getPGConnectionPoolDataSource();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -33,8 +34,8 @@ public class UserDaoJDBCImpl implements UserDao {
                     "age numeric, " +
                     "PRIMARY KEY (id));";
 
-            try (Statement st = connection.createStatement()) {
-                st.executeUpdate(sql);
+            try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
+                pst.executeUpdate();
                 System.out.println("TABLE CREATE " + TABLE_NAME + " COMPLETE");
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -42,13 +43,12 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-
     public void dropUsersTable() {
         if (isPresentInDatabase(TABLE_NAME)) {
             String sql = "DROP TABLE " + TABLE_NAME + ";";
 
-            try (Statement st = connection.createStatement()) {
-                st.executeUpdate(sql);
+            try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
+                pst.executeUpdate();
                 System.out.println("DROP TABLE " + TABLE_NAME + " COMPLETE");
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -64,7 +64,7 @@ public class UserDaoJDBCImpl implements UserDao {
                     "(?, ?, ?)" +
                     "returning name;";
 
-            try (PreparedStatement pst = connection.prepareStatement(sql)) {
+            try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
                 pst.setString(1, name);
                 pst.setString(2, lastName);
                 pst.setInt(3, age);
@@ -89,7 +89,7 @@ public class UserDaoJDBCImpl implements UserDao {
 
             users.stream().forEach((u) -> {
                 if (u.getId() == id) {
-                    try (PreparedStatement pst = connection.prepareStatement(sql)) {
+                    try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
                         pst.setLong(1, id);
                         pst.executeUpdate();
                     } catch (SQLException e) {
@@ -107,11 +107,11 @@ public class UserDaoJDBCImpl implements UserDao {
      */
     public List<User> getAllUsers() {
         if (isPresentInDatabase(TABLE_NAME)) {
-            String sql = "Select * FROM " + TABLE_NAME + " ORDER BY id";
+            String sql = "Select * FROM " + TABLE_NAME + " ORDER BY id;";
             List<User> users = new ArrayList<>();
 
-            try (Statement st = connection.createStatement();
-                 ResultSet rs = st.executeQuery(sql)) {
+            try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
+                ResultSet rs = pst.executeQuery();
 
                 while (rs.next()) {
                     User user = new User();
@@ -128,26 +128,23 @@ public class UserDaoJDBCImpl implements UserDao {
 
                     users.add(user);
                 }
-
+                rs.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
             users.stream().forEach(System.out::println);
             return users;
         }
-        System.out.println("Таблици не существует");
         return null;
     }
 
     public void cleanUsersTable() {
         if (isPresentInDatabase(TABLE_NAME)) {
-            String sql = "TRUNCATE TABLE " + TABLE_NAME;
+            String sql = "TRUNCATE TABLE " + TABLE_NAME + ";";
 
-            try (Statement st = connection.createStatement()) {
-
-                st.executeUpdate(sql);
+            try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
+                pst.executeUpdate();
                 System.out.println("TRUNCATE TABLE " + TABLE_NAME + " COMPLETE");
-
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -159,8 +156,8 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "SELECT * FROM pg_tables;";
         boolean isPresent = false;
 
-        try (Statement st = connection.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+        try (PreparedStatement pst = dataSource.getConnection().prepareStatement(sql)) {
+            ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
                 String table = rs.getString(2);
@@ -169,6 +166,7 @@ public class UserDaoJDBCImpl implements UserDao {
                 }
             }
 
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
